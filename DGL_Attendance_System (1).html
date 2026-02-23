@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataMaker · Attendance System</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Noto+Sans+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f5ff;--bg2:#ffffff;--bg3:#e8f0fe;--bg4:#d0e0ff;--border:rgba(0,52,210,0.12);--border2:rgba(0,52,210,0.2);--text:#0d1a3a;--text2:#3a5490;--text3:#7a95c0;--amber:#f5a623;--amber2:#ffc55a;--amber-dim:rgba(245,166,35,0.12);--amber-glow:rgba(245,166,35,0.25);--green:#2dd4a0;--green-dim:rgba(45,212,160,0.12);--red:#f56565;--red-dim:rgba(245,101,101,0.12);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#a78bfa;--radius:10px;--radius-lg:16px;--shadow:0 4px 24px rgba(0,52,210,0.12);--shadow-lg:0 8px 48px rgba(0,52,210,0.18);--font-head:'Noto Sans',sans-serif;--font-body:'Noto Sans',sans-serif;--font-mono:'Noto Sans Mono',monospace;--sidebar-w:240px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:var(--font-body);background:linear-gradient(135deg,#f0f5ff 0%,#e8f0fe 30%,#f8fbff 70%,#eef5ff 100%);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit}
+a{text-decoration:none;color:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg3)}
+::-webkit-scrollbar-thumb{background:#b0c8f0;border-radius:4px}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#e8f0fe 0%,#ffffff 50%,#dbeafe 100%);display:flex;align-items:center;justify-content:center;z-index:100;transition:opacity .5s,transform .5s}
+#login-screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
+.login-wrap{width:100%;max-width:420px;padding:20px}
+.login-logo{text-align:center;margin-bottom:40px}
+.login-logo .brand{font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--text);letter-spacing:-.03em}
+.login-logo .brand span{color:var(--amber)}
+.login-logo .sub{font-size:.78rem;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;font-family:var(--font-mono)}
+.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:36px;box-shadow:0 8px 40px rgba(0,52,210,0.15)}
+.login-card h2{font-family:var(--font-head);font-size:1.3rem;font-weight:700;margin-bottom:6px}
+.login-card p{color:var(--text2);font-size:.85rem;margin-bottom:28px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.78rem;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:var(--font-mono)}
+.form-group input,.form-group select{width:100%;background:#f5f8ff;border:1px solid var(--border2);border-radius:var(--radius);padding:11px 14px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s,box-shadow .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-dim)}
+.form-group select option{background:#f5f8ff}
+.btn-primary{width:100%;background:#0034D2;color:#fff;border:none;border-radius:var(--radius);padding:13px;font-size:.92rem;font-weight:600;font-family:var(--font-head);letter-spacing:.02em;transition:background .2s,transform .1s,box-shadow .2s;margin-top:8px}
+.btn-primary:hover{background:#1a4ee0;box-shadow:0 4px 20px rgba(0,52,210,0.3)}
+.btn-primary:active{transform:scale(.98)}
+.login-error{background:var(--red-dim);border:1px solid var(--red);border-radius:var(--radius);padding:10px 14px;font-size:.83rem;color:var(--red);margin-top:12px;display:none}
+.login-error.show{display:block}
+.demo-hint{margin-top:24px;padding:14px;background:rgba(0,52,210,0.08);border:1px solid rgba(0,52,210,0.2);border-radius:var(--radius);font-size:.78rem;color:var(--text2);font-family:var(--font-mono)}
+.demo-hint strong{color:var(--amber);display:block;margin-bottom:6px;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em}
+
+/* APP SHELL */
+#app{display:flex;width:100%;opacity:0;transition:opacity .5s}
+#app.visible{opacity:1}
+
+/* SIDEBAR */
+#sidebar{width:var(--sidebar-w);min-height:100vh;background:linear-gradient(180deg,#1a3a8f 0%,#0034D2 100%);border-right:1px solid rgba(0,52,210,0.3);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50}
+.sidebar-brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.15)}
+.sidebar-brand .name{font-family:var(--font-head);font-size:1.15rem;font-weight:800;letter-spacing:-.03em;color:#fff}
+.sidebar-brand .name span{color:var(--amber)}
+.sidebar-brand .tagline{font-size:.68rem;color:rgba(255,255,255,0.6);font-family:var(--font-mono);letter-spacing:.1em;margin-top:2px;text-transform:uppercase}
+.sidebar-user{padding:14px 16px;margin:12px 12px 6px;background:rgba(255,255,255,0.15);border-radius:var(--radius);border:1px solid rgba(255,255,255,0.2)}
+.sidebar-user .user-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.sidebar-user .user-role{font-size:.7rem;color:#a0c0ff;font-family:var(--font-mono);margin-top:2px}
+.sidebar-nav{flex:1;padding:8px 10px;overflow-y:auto}
+.nav-section{margin-bottom:6px}
+.nav-section-label{font-size:.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono);padding:10px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:.85rem;color:rgba(255,255,255,0.75);cursor:pointer;transition:all .15s;border:1px solid transparent;font-weight:400}
+.nav-item:hover{background:rgba(255,255,255,0.15);color:#fff}
+.nav-item.active{background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3);font-weight:600}
+.nav-item .icon{width:16px;text-align:center;font-size:.85rem;flex-shrink:0}
+.nav-item .badge{margin-left:auto;background:rgba(255,255,255,0.25);color:#fff;font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:20px;font-family:var(--font-mono)}
+.sidebar-bottom{padding:12px;border-top:1px solid rgba(255,255,255,0.15)}
+.btn-logout{width:100%;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:var(--radius);color:rgba(255,255,255,0.75);padding:9px;font-size:.8rem;font-family:var(--font-mono);transition:all .2s}
+.btn-logout:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,0.15)}
+
+/* MAIN */
+#main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#ffffff;border-bottom:1px solid var(--border);box-shadow:0 2px 8px rgba(0,52,210,0.08);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-left h1{font-family:var(--font-head);font-size:1.15rem;font-weight:700;letter-spacing:-.02em}
+.topbar-left .breadcrumb{font-size:.72rem;color:#7a95c0;font-family:var(--font-mono);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.clock-display{font-family:var(--font-mono);font-size:.8rem;color:#0034D2;background:rgba(0,52,210,0.08);padding:6px 12px;border-radius:20px;border:1px solid rgba(0,52,210,0.2)}
+.date-display{font-family:var(--font-mono);font-size:.75rem;color:var(--text3)}
+.page-content{padding:28px;flex:1;background:transparent}
+.page{display:none}
+.page.active{display:block;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.amber::before{background:var(--amber)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-card.purple::before{background:var(--purple)}
+.stat-label{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-family:var(--font-mono);margin-bottom:10px}
+.stat-value{font-family:var(--font-head);font-size:2.2rem;font-weight:800;line-height:1;letter-spacing:-.04em}
+.stat-card.amber .stat-value{color:var(--amber)}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.red .stat-value{color:var(--red)}
+.stat-card.blue .stat-value{color:var(--blue)}
+.stat-card.purple .stat-value{color:var(--purple)}
+.stat-sub{font-size:.75rem;color:var(--text3);margin-top:4px}
+
+/* SECTION HEADERS */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-head h2{font-family:var(--font-head);font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
+.section-head p{font-size:.8rem;color:var(--text2);margin-top:2px}
+
+/* TABLE */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.table-toolbar{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-input{background:#fff;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.82rem;outline:none;width:200px;transition:border-color .2s}
+.search-input:focus{border-color:var(--amber)}
+.search-input::placeholder{color:var(--text3)}
+.filter-select{background:#fff;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.82rem;outline:none;cursor:pointer}
+.filter-select option{background:#fff}
+.ml-auto{margin-left:auto}
+.btn-sm{padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:500;border:1px solid var(--border2);background:#fff;color:var(--text);transition:all .2s;font-family:var(--font-mono);display:flex;align-items:center;gap:6px;cursor:pointer}
+.btn-sm:hover{border-color:var(--amber);color:var(--amber)}
+.btn-sm.amber{background:#0034D2;color:#fff;border-color:#0034D2;font-weight:600}
+.btn-sm.amber:hover{background:#1a4ee0}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{background:#e8f0fe;padding:10px 14px;text-align:left;font-size:.68rem;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(0,52,210,0.04)}
+tbody td{padding:10px 14px;color:var(--text);vertical-align:middle}
+.td-name{font-weight:500}
+.td-mono{font-family:var(--font-mono);font-size:.78rem}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600;font-family:var(--font-mono);letter-spacing:.04em}
+.badge-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,166,35,.25)}
+.badge-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,.25)}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(245,101,101,.25)}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.badge-gray{background:rgba(255,255,255,.05);color:var(--text2);border:1px solid var(--border2)}
+.late-dot{color:var(--red);font-size:1rem}
+
+/* ENTRY CARDS */
+.entry-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:20px}
+.entry-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .2s}
+.entry-card:hover{border-color:var(--border2)}
+.entry-card-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.entry-name{font-weight:600;font-size:.88rem}
+.entry-meta{font-size:.7rem;color:var(--text3);font-family:var(--font-mono)}
+.entry-card-body{padding:14px 16px}
+.entry-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.entry-field label{font-size:.65rem;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono);letter-spacing:.08em;display:block;margin-bottom:5px}
+.entry-field input[type=time],.entry-field select{width:100%;background:#f5f8ff;border:1px solid var(--border2);border-radius:7px;padding:7px 10px;color:var(--text);font-size:.82rem;font-family:var(--font-mono);outline:none;transition:border-color .2s}
+.entry-field input[type=time]:focus,.entry-field select:focus{border-color:var(--amber)}
+.entry-field select option{background:#f5f8ff}
+.entry-computed{display:flex;gap:8px;margin-top:8px}
+.computed-chip{flex:1;background:#e8f0fe;border:1px solid var(--border);border-radius:7px;padding:6px 10px;text-align:center}
+.computed-chip .chip-label{font-size:.6rem;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase}
+.computed-chip .chip-val{font-family:var(--font-mono);font-size:.8rem;font-weight:500;margin-top:2px}
+.chip-late .chip-val{color:var(--red)}
+.chip-ot .chip-val{color:var(--amber)}
+.chip-hrs .chip-val{color:var(--green)}
+
+/* SUMMARY */
+.summary-table-wrap{overflow-x:auto}
+.summary-table{min-width:1100px}
+.summary-table td,.summary-table th{white-space:nowrap}
+.num-cell{text-align:center;font-family:var(--font-mono)}
+.zero{color:var(--text3)}
+.highlight-red{color:var(--red);font-weight:600}
+.highlight-amber{color:var(--amber);font-weight:600}
+
+/* RULES */
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.rule-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;transition:border-color .2s}
+.rule-card:hover{border-color:var(--border2)}
+.rule-card-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.rule-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.rule-icon.amber{background:rgba(0,52,210,0.1)}
+.rule-icon.green{background:var(--green-dim)}
+.rule-icon.blue{background:var(--blue-dim)}
+.rule-icon.red{background:var(--red-dim)}
+.rule-card h3{font-family:var(--font-head);font-size:.95rem;font-weight:700}
+.rule-card p,.rule-card li{font-size:.82rem;color:var(--text2);line-height:1.6}
+.rule-card ul{list-style:none;padding:0}
+.rule-card li{padding:4px 0;display:flex;align-items:flex-start;gap:8px}
+.rule-card li::before{content:'▸';color:var(--amber);margin-top:1px;flex-shrink:0;font-size:.7rem}
+.rule-table{width:100%;border-collapse:collapse;margin-top:8px}
+.rule-table th,.rule-table td{padding:6px 10px;text-align:left;font-size:.78rem;border-bottom:1px solid var(--border)}
+.rule-table th{color:var(--text3);font-family:var(--font-mono);font-size:.65rem;text-transform:uppercase}
+
+/* STATUS GRID */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px}
+.status-chip{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.78rem}
+.status-chip .s-name{font-weight:500;margin-bottom:2px}
+.status-chip .s-type{font-size:.65rem;color:var(--text3);font-family:var(--font-mono)}
+.status-chip.active-status{border-color:rgba(45,212,160,.3)}
+.status-chip.active-status .s-name{color:var(--green)}
+.status-chip.leave-status{border-color:rgba(96,165,250,.2)}
+.status-chip.leave-status .s-name{color:var(--blue)}
+.status-chip.absent-status{border-color:rgba(245,101,101,.2)}
+.status-chip.absent-status .s-name{color:var(--red)}
+.status-chip.other-status{border-color:rgba(167,139,250,.2)}
+.status-chip.other-status .s-name{color:var(--purple)}
+
+/* ACCESS */
+.access-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.access-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px}
+.access-card h3{font-family:var(--font-head);font-size:.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.access-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.82rem}
+.access-row:last-child{border-bottom:none}
+.access-perm{font-family:var(--font-mono);font-size:.72rem}
+.perm-yes{color:var(--green)}
+.perm-no{color:var(--red)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border:1px solid var(--border2);border-radius:var(--radius-lg);width:90%;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg);transform:scale(.96);transition:transform .2s}
+.modal-overlay.open .modal{transform:scale(1)}
+.modal-head{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-family:var(--font-head);font-size:1rem;font-weight:700}
+.modal-close{background:none;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;padding:4px;transition:color .2s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:22px}
+.modal-footer{padding:16px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* TOAST */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:10px}
+.toast{background:#fff;border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;font-size:.82rem;box-shadow:var(--shadow);animation:slideIn .3s ease;display:flex;align-items:center;gap:10px;min-width:260px}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--amber)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:20px 0}
+.empty-state{padding:48px;text-align:center;color:var(--text3);font-size:.85rem}
+.empty-state .em-icon{font-size:2.5rem;margin-bottom:12px}
+.empty-state p{color:var(--text2)}
+.info-banner{background:rgba(0,52,210,0.07);border:1px solid rgba(0,52,210,0.18);border-radius:var(--radius);padding:12px 16px;font-size:.82rem;color:var(--text);display:flex;align-items:flex-start;gap:10px;margin-bottom:20px}
+.info-banner .ib-icon{color:#0034D2;flex-shrink:0;margin-top:1px}
+.flex-row{display:flex;align-items:center;gap:10px}
+.mb-20{margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div style="display:flex;justify-content:center;margin-bottom:12px"><svg width="120" height="25" viewBox="0 0 132 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.4316 4.17505H4.56852C4.43096 4.17505 4.36218 4.17505 4.30964 4.20182C4.26343 4.22537 4.22586 4.26294 4.20231 4.30916C4.17554 4.3617 4.17554 4.43047 4.17554 4.56803V23.4311C4.17554 23.5686 4.17554 23.6374 4.20231 23.69C4.22586 23.7362 4.26343 23.7738 4.30964 23.7973C4.36218 23.8241 4.43096 23.8241 4.56852 23.8241H23.4316C23.5691 23.8241 23.6379 23.8241 23.6905 23.7973C23.7367 23.7738 23.7742 23.7362 23.7978 23.69C23.8246 23.6374 23.8246 23.5686 23.8246 23.4311V4.56803C23.8246 4.43047 23.8246 4.3617 23.7978 4.30916C23.7742 4.26294 23.7367 4.22537 23.6905 4.20182C23.6379 4.17505 23.5691 4.17505 23.4316 4.17505Z" fill="#799AFF"/><path d="M4.17542 8.35083C6.48144 8.35083 8.35083 6.48144 8.35083 4.17542C8.35083 1.8694 6.48144 0 4.17542 0C1.8694 0 0 1.8694 0 4.17542C0 6.48144 1.8694 8.35083 4.17542 8.35083Z" fill="#0034D2"/><path d="M23.8246 27.9999C26.1306 27.9999 28 26.1305 28 23.8245C28 21.5184 26.1306 19.649 23.8246 19.649C21.5186 19.649 19.6492 21.5184 19.6492 23.8245C19.6492 26.1305 21.5186 27.9999 23.8246 27.9999Z" fill="#0034D2"/><path fill-rule="evenodd" clip-rule="evenodd" d="M103.851 6.13226V21.8578H106.313V16.3645L110.365 21.8574H113.284L109.026 16.0857L113.173 10.3142H110.255L106.313 15.7996V6.13226H103.851ZM119.192 22.1192C116.23 22.1192 113.921 19.8323 113.921 16.1949V16.0425C113.921 12.5794 115.99 10.0964 118.843 10.0964C121.98 10.0964 123.635 12.6883 123.635 16.1731C123.635 16.3256 123.635 16.6741 123.613 17.0226H116.382C116.622 18.9611 117.798 20.0065 119.301 20.0065C120.411 20.0065 121.196 19.5491 121.958 18.7868L123.243 20.3115C122.197 21.4223 120.934 22.1192 119.192 22.1192ZM116.36 15.3237H121.217C121.108 13.4724 120.303 12.1655 118.843 12.1655C117.471 12.1655 116.534 13.3417 116.36 15.3237ZM125.887 21.8579V10.3142H128.348V12.5576C128.958 11.0765 130.069 10.0528 131.812 10.1399V12.8189H131.703C129.721 12.8189 128.348 14.1258 128.348 16.7394V21.8579H125.887ZM74.5836 21.8579V10.3142H77.0449V11.9913C77.7201 10.9676 78.6131 10.0964 80.1377 10.0964C81.5534 10.0964 82.5771 10.8151 83.1216 11.9477C83.9057 10.9023 84.9294 10.0964 86.4976 10.0964C88.6539 10.0964 90.0261 11.4903 90.0261 14.104V21.8579H87.5867V14.8446C87.5867 13.1892 86.8461 12.318 85.6264 12.318C84.4067 12.318 83.5355 13.211 83.5355 14.8663V21.8579H81.0743V14.8228C81.0743 13.1674 80.3555 12.318 79.1358 12.318C77.8943 12.318 77.0449 13.2981 77.0449 14.8663V21.8579H74.5836ZM56.1323 19.0482C56.1323 21.3134 57.4391 22.0321 59.1162 22.0321C59.9657 22.0321 60.5755 21.8579 61.1636 21.5312V19.5274C60.728 19.7234 60.2924 19.8323 59.835 19.8323C59.0509 19.8323 58.6153 19.462 58.6153 18.569V12.4269H61.1854V10.3142H58.6153V7.19956H56.1323V10.3142H54.8908V12.4269H56.1323V19.0482ZM35.9655 22.0757C33.635 22.0757 31.5005 20.159 31.5005 16.2385V15.9335C31.5005 12.0566 33.635 10.0964 35.9655 10.0964C37.6426 10.0964 38.6663 11.0547 39.3415 12.0784V6.13229H41.8245V21.8579H39.3415V20.0065C38.6445 21.1173 37.6208 22.0757 35.9655 22.0757ZM36.6407 19.8976C38.1436 19.8976 39.4068 18.4601 39.4068 16.1949V15.9771C39.4068 13.7119 38.1436 12.2744 36.6407 12.2744C35.1378 12.2744 33.9835 13.6466 33.9835 15.9771V16.1731C33.9835 18.4819 35.1596 19.8976 36.6407 19.8976ZM50.7132 15.1546V14.7124C50.7132 13.1442 49.7984 12.3601 48.2302 12.3601C47.1194 12.3601 46.2264 12.7085 45.4641 13.057L44.7453 11.0968C45.8561 10.5523 46.9887 10.182 48.5569 10.182C50.0598 10.182 51.1924 10.574 51.9547 11.3364C52.717 12.0987 53.1091 13.2313 53.1091 14.6906V21.8564H50.6914V20.4429C50.0162 21.4001 48.9899 22.0742 47.4882 22.0742L47.4889 22.0742C45.5723 22.0742 43.9387 20.8519 43.9387 18.718V18.5937C43.9387 16.2526 45.6376 15.1546 48.077 15.1546H50.7132ZM50.6906 16.8324H48.4296C47.9505 16.8324 47.5536 16.9049 47.2388 17.0499C46.924 17.1788 46.6982 17.3721 46.5613 17.6299C46.4245 17.8876 46.356 18.1857 46.356 18.524C46.356 18.8623 46.4245 19.1523 46.5613 19.394C46.6982 19.6356 46.8966 19.8209 47.1567 19.9498C47.4167 20.0787 47.7247 20.1431 48.0805 20.1431C48.4775 20.1431 48.8265 20.0626 49.1276 19.9015C49.4424 19.7243 49.7093 19.4826 49.9283 19.1765C50.1609 18.8543 50.3389 18.4998 50.462 18.1132C50.5688 17.778 50.6447 17.4247 50.6898 17.0532L50.6906 16.8324ZM69.5381 14.7124V15.1547H66.9019C64.4624 15.1547 62.7636 16.2527 62.7636 18.5938V18.7181C62.7636 20.8519 64.3971 22.0743 66.3138 22.0743L66.3131 22.0742C67.8147 22.0742 68.8411 21.4001 69.5163 20.443V21.8564H71.9339V14.6906C71.9339 13.2313 71.5419 12.0987 70.7796 11.3364C70.0172 10.5741 68.8846 10.182 67.3818 10.182C65.8136 10.182 64.681 10.5523 63.5702 11.0968L64.2889 13.0571C65.0513 12.7086 65.9443 12.3601 67.0551 12.3601C68.6233 12.3601 69.5381 13.1442 69.5381 14.7124ZM67.2544 16.8325H69.5154L69.5147 17.0533C69.4696 17.4248 69.3937 17.7781 69.2869 18.1132C69.1637 18.4999 68.9858 18.8543 68.7531 19.1765C68.5341 19.4826 68.2672 19.7243 67.9524 19.9015C67.6513 20.0626 67.3023 20.1432 66.9054 20.1432C66.5495 20.1432 66.2416 20.0787 65.9815 19.9499C65.7215 19.821 65.523 19.6357 65.3862 19.394C65.2493 19.1524 65.1809 18.8624 65.1809 18.5241C65.1809 18.1857 65.2493 17.8877 65.3862 17.6299C65.523 17.3722 65.7489 17.1788 66.0637 17.05C66.3785 16.905 66.7754 16.8325 67.2544 16.8325ZM98.8053 15.1546V14.7124C98.8053 13.1442 97.8905 12.3601 96.3223 12.3601C95.2115 12.3601 94.3185 12.7085 93.5562 13.057L92.8375 11.0968C93.9483 10.5523 95.0809 10.182 96.649 10.182C98.1519 10.182 99.2845 10.574 100.047 11.3364C100.809 12.0987 101.201 13.2313 101.201 14.6906V21.8564H98.7836V20.4429C98.1084 21.4 97.0822 22.0741 95.5807 22.0742C93.6642 22.0741 92.0308 20.8518 92.0308 18.718V18.5937C92.0308 16.2526 93.7297 15.1546 96.1691 15.1546H98.8053ZM95.5807 22.0742C95.5806 22.0742 95.5805 22.0742 95.5804 22.0742H95.5811C95.581 22.0742 95.5809 22.0742 95.5807 22.0742ZM98.7827 16.8324H96.5217C96.0426 16.8324 95.6457 16.9049 95.3309 17.0499C95.0161 17.1788 94.7903 17.3721 94.6534 17.6299C94.5166 17.8876 94.4481 18.1857 94.4481 18.524C94.4481 18.8623 94.5166 19.1523 94.6534 19.394C94.7903 19.6356 94.9888 19.8209 95.2488 19.9498C95.5089 20.0787 95.8168 20.1431 96.1727 20.1431C96.5696 20.1431 96.9186 20.0626 97.2197 19.9015C97.5345 19.7243 97.8014 19.4826 98.0204 19.1765C98.2531 18.8543 98.431 18.4998 98.5542 18.1132C98.6609 17.778 98.7369 17.4247 98.7819 17.0532L98.7827 16.8324Z" fill="#191919"/></svg></div>
+      <div class="sub" style="color:#3a5490;letter-spacing:.1em;text-transform:uppercase;font-size:.75rem;font-family:var(--font-mono)">Attendance Recording System</div>
+    </div>
+    <div class="login-card">
+      <h2>Welcome back</h2>
+      <p>Sign in to access the attendance portal</p>
+      <div class="form-group">
+        <label>Staff ID</label>
+        <input type="text" id="login-id" placeholder="e.g. 25043" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="Enter your password">
+      </div>
+      <div class="form-group">
+        <label>Your Role</label>
+        <select id="login-role">
+          <option value="">— Select your role —</option>
+          <option value="Head Project Manager">Head Project Manager</option>
+          <option value="HR">HR</option>
+          <option value="HR Assistant">HR Assistant</option>
+          <option value="IT/Facility Manager">IT/Facility Manager</option>
+          <option value="IT/Facility Assistant">IT/Facility Assistant</option>
+          <option value="Accountant">Accountant</option>
+          <option value="Senior Project Manager">Senior Project Manager</option>
+          <option value="Project Manager">Project Manager</option>
+          <option value="Quality Manager">Quality Manager</option>
+          <option value="Data Annotator">Data Annotator</option>
+          <option value="Janitor">Janitor</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Sign In</button>
+      <div id="login-error" class="login-error">Please fill in all fields with the correct credentials.</div>
+      <p style="text-align:center;margin-top:18px;font-size:.83rem;color:var(--text2)">New worker? <a href="#" onclick="toggleSignup(true);return false;" style="color:#0034D2;font-weight:600;text-decoration:underline">Create an account</a></p>
+    </div>
+
+    <!-- SIGN UP CARD -->
+    <div class="login-card" id="signup-card" style="display:none">
+      <h2 style="color:var(--text)">Create Account</h2>
+      <p>Register as a new worker to access the portal</p>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Enter your full name" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Staff ID</label>
+        <input type="text" id="signup-id" placeholder="e.g. 25099" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Position / Role</label>
+        <select id="signup-role">
+          <option value="">— Select your position —</option>
+          <option value="Head Project Manager">Head Project Manager</option>
+          <option value="HR">HR</option>
+          <option value="HR Assistant">HR Assistant</option>
+          <option value="IT/Facility Manager">IT/Facility Manager</option>
+          <option value="IT/Facility Assistant">IT/Facility Assistant</option>
+          <option value="Accountant">Accountant</option>
+          <option value="Senior Project Manager">Senior Project Manager</option>
+          <option value="Project Manager">Project Manager</option>
+          <option value="Quality Manager">Quality Manager</option>
+          <option value="Data Annotator">Data Annotator</option>
+          <option value="Janitor">Janitor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Create Password</label>
+        <input type="password" id="signup-pass" placeholder="Minimum 6 characters">
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="signup-pass2" placeholder="Re-enter your password">
+      </div>
+      <button class="btn-primary" onclick="doSignup()">Create Account</button>
+      <div id="signup-error" class="login-error"></div>
+      <p style="text-align:center;margin-top:18px;font-size:.83rem;color:var(--text2)">Already have an account? <a href="#" onclick="toggleSignup(false);return false;" style="color:#0034D2;font-weight:600;text-decoration:underline">Sign in</a></p>
+    </div>
+
+    <div class="demo-hint">
+      <strong>🔑 Demo Access</strong>
+      Staff ID: any value &nbsp;·&nbsp; Password: <code>dgl2026</code> &nbsp;·&nbsp; Select any role to demo that access level
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <div style="margin-bottom:6px"><svg width="120" height="25" viewBox="0 0 132 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.4316 4.17505H4.56852C4.43096 4.17505 4.36218 4.17505 4.30964 4.20182C4.26343 4.22537 4.22586 4.26294 4.20231 4.30916C4.17554 4.3617 4.17554 4.43047 4.17554 4.56803V23.4311C4.17554 23.5686 4.17554 23.6374 4.20231 23.69C4.22586 23.7362 4.26343 23.7738 4.30964 23.7973C4.36218 23.8241 4.43096 23.8241 4.56852 23.8241H23.4316C23.5691 23.8241 23.6379 23.8241 23.6905 23.7973C23.7367 23.7738 23.7742 23.7362 23.7978 23.69C23.8246 23.6374 23.8246 23.5686 23.8246 23.4311V4.56803C23.8246 4.43047 23.8246 4.3617 23.7978 4.30916C23.7742 4.26294 23.7367 4.22537 23.6905 4.20182C23.6379 4.17505 23.5691 4.17505 23.4316 4.17505Z" fill="#799AFF"/><path d="M4.17542 8.35083C6.48144 8.35083 8.35083 6.48144 8.35083 4.17542C8.35083 1.8694 6.48144 0 4.17542 0C1.8694 0 0 1.8694 0 4.17542C0 6.48144 1.8694 8.35083 4.17542 8.35083Z" fill="#0034D2"/><path d="M23.8246 27.9999C26.1306 27.9999 28 26.1305 28 23.8245C28 21.5184 26.1306 19.649 23.8246 19.649C21.5186 19.649 19.6492 21.5184 19.6492 23.8245C19.6492 26.1305 21.5186 27.9999 23.8246 27.9999Z" fill="#0034D2"/><path fill-rule="evenodd" clip-rule="evenodd" d="M103.851 6.13226V21.8578H106.313V16.3645L110.365 21.8574H113.284L109.026 16.0857L113.173 10.3142H110.255L106.313 15.7996V6.13226H103.851ZM119.192 22.1192C116.23 22.1192 113.921 19.8323 113.921 16.1949V16.0425C113.921 12.5794 115.99 10.0964 118.843 10.0964C121.98 10.0964 123.635 12.6883 123.635 16.1731C123.635 16.3256 123.635 16.6741 123.613 17.0226H116.382C116.622 18.9611 117.798 20.0065 119.301 20.0065C120.411 20.0065 121.196 19.5491 121.958 18.7868L123.243 20.3115C122.197 21.4223 120.934 22.1192 119.192 22.1192ZM116.36 15.3237H121.217C121.108 13.4724 120.303 12.1655 118.843 12.1655C117.471 12.1655 116.534 13.3417 116.36 15.3237ZM125.887 21.8579V10.3142H128.348V12.5576C128.958 11.0765 130.069 10.0528 131.812 10.1399V12.8189H131.703C129.721 12.8189 128.348 14.1258 128.348 16.7394V21.8579H125.887ZM74.5836 21.8579V10.3142H77.0449V11.9913C77.7201 10.9676 78.6131 10.0964 80.1377 10.0964C81.5534 10.0964 82.5771 10.8151 83.1216 11.9477C83.9057 10.9023 84.9294 10.0964 86.4976 10.0964C88.6539 10.0964 90.0261 11.4903 90.0261 14.104V21.8579H87.5867V14.8446C87.5867 13.1892 86.8461 12.318 85.6264 12.318C84.4067 12.318 83.5355 13.211 83.5355 14.8663V21.8579H81.0743V14.8228C81.0743 13.1674 80.3555 12.318 79.1358 12.318C77.8943 12.318 77.0449 13.2981 77.0449 14.8663V21.8579H74.5836ZM56.1323 19.0482C56.1323 21.3134 57.4391 22.0321 59.1162 22.0321C59.9657 22.0321 60.5755 21.8579 61.1636 21.5312V19.5274C60.728 19.7234 60.2924 19.8323 59.835 19.8323C59.0509 19.8323 58.6153 19.462 58.6153 18.569V12.4269H61.1854V10.3142H58.6153V7.19956H56.1323V10.3142H54.8908V12.4269H56.1323V19.0482ZM35.9655 22.0757C33.635 22.0757 31.5005 20.159 31.5005 16.2385V15.9335C31.5005 12.0566 33.635 10.0964 35.9655 10.0964C37.6426 10.0964 38.6663 11.0547 39.3415 12.0784V6.13229H41.8245V21.8579H39.3415V20.0065C38.6445 21.1173 37.6208 22.0757 35.9655 22.0757ZM36.6407 19.8976C38.1436 19.8976 39.4068 18.4601 39.4068 16.1949V15.9771C39.4068 13.7119 38.1436 12.2744 36.6407 12.2744C35.1378 12.2744 33.9835 13.6466 33.9835 15.9771V16.1731C33.9835 18.4819 35.1596 19.8976 36.6407 19.8976ZM50.7132 15.1546V14.7124C50.7132 13.1442 49.7984 12.3601 48.2302 12.3601C47.1194 12.3601 46.2264 12.7085 45.4641 13.057L44.7453 11.0968C45.8561 10.5523 46.9887 10.182 48.5569 10.182C50.0598 10.182 51.1924 10.574 51.9547 11.3364C52.717 12.0987 53.1091 13.2313 53.1091 14.6906V21.8564H50.6914V20.4429C50.0162 21.4001 48.9899 22.0742 47.4882 22.0742L47.4889 22.0742C45.5723 22.0742 43.9387 20.8519 43.9387 18.718V18.5937C43.9387 16.2526 45.6376 15.1546 48.077 15.1546H50.7132ZM50.6906 16.8324H48.4296C47.9505 16.8324 47.5536 16.9049 47.2388 17.0499C46.924 17.1788 46.6982 17.3721 46.5613 17.6299C46.4245 17.8876 46.356 18.1857 46.356 18.524C46.356 18.8623 46.4245 19.1523 46.5613 19.394C46.6982 19.6356 46.8966 19.8209 47.1567 19.9498C47.4167 20.0787 47.7247 20.1431 48.0805 20.1431C48.4775 20.1431 48.8265 20.0626 49.1276 19.9015C49.4424 19.7243 49.7093 19.4826 49.9283 19.1765C50.1609 18.8543 50.3389 18.4998 50.462 18.1132C50.5688 17.778 50.6447 17.4247 50.6898 17.0532L50.6906 16.8324ZM69.5381 14.7124V15.1547H66.9019C64.4624 15.1547 62.7636 16.2527 62.7636 18.5938V18.7181C62.7636 20.8519 64.3971 22.0743 66.3138 22.0743L66.3131 22.0742C67.8147 22.0742 68.8411 21.4001 69.5163 20.443V21.8564H71.9339V14.6906C71.9339 13.2313 71.5419 12.0987 70.7796 11.3364C70.0172 10.5741 68.8846 10.182 67.3818 10.182C65.8136 10.182 64.681 10.5523 63.5702 11.0968L64.2889 13.0571C65.0513 12.7086 65.9443 12.3601 67.0551 12.3601C68.6233 12.3601 69.5381 13.1442 69.5381 14.7124ZM67.2544 16.8325H69.5154L69.5147 17.0533C69.4696 17.4248 69.3937 17.7781 69.2869 18.1132C69.1637 18.4999 68.9858 18.8543 68.7531 19.1765C68.5341 19.4826 68.2672 19.7243 67.9524 19.9015C67.6513 20.0626 67.3023 20.1432 66.9054 20.1432C66.5495 20.1432 66.2416 20.0787 65.9815 19.9499C65.7215 19.821 65.523 19.6357 65.3862 19.394C65.2493 19.1524 65.1809 18.8624 65.1809 18.5241C65.1809 18.1857 65.2493 17.8877 65.3862 17.6299C65.523 17.3722 65.7489 17.1788 66.0637 17.05C66.3785 16.905 66.7754 16.8325 67.2544 16.8325ZM98.8053 15.1546V14.7124C98.8053 13.1442 97.8905 12.3601 96.3223 12.3601C95.2115 12.3601 94.3185 12.7085 93.5562 13.057L92.8375 11.0968C93.9483 10.5523 95.0809 10.182 96.649 10.182C98.1519 10.182 99.2845 10.574 100.047 11.3364C100.809 12.0987 101.201 13.2313 101.201 14.6906V21.8564H98.7836V20.4429C98.1084 21.4 97.0822 22.0741 95.5807 22.0742C93.6642 22.0741 92.0308 20.8518 92.0308 18.718V18.5937C92.0308 16.2526 93.7297 15.1546 96.1691 15.1546H98.8053ZM95.5807 22.0742C95.5806 22.0742 95.5805 22.0742 95.5804 22.0742H95.5811C95.581 22.0742 95.5809 22.0742 95.5807 22.0742ZM98.7827 16.8324H96.5217C96.0426 16.8324 95.6457 16.9049 95.3309 17.0499C95.0161 17.1788 94.7903 17.3721 94.6534 17.6299C94.5166 17.8876 94.4481 18.1857 94.4481 18.524C94.4481 18.8623 94.5166 19.1523 94.6534 19.394C94.7903 19.6356 94.9888 19.8209 95.2488 19.9498C95.5089 20.0787 95.8168 20.1431 96.1727 20.1431C96.5696 20.1431 96.9186 20.0626 97.2197 19.9015C97.5345 19.7243 97.8014 19.4826 98.0204 19.1765C98.2531 18.8543 98.431 18.4998 98.5542 18.1132C98.6609 17.778 98.7369 17.4247 98.7819 17.0532L98.7827 16.8324Z" fill="#ffffff"/></svg></div>
+      <div class="tagline">Attendance System</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-name" id="sidebar-username">—</div>
+      <div class="user-role" id="sidebar-role">—</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">Overview</div>
+        <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">◈</span> Dashboard</div>
+        <div class="nav-item" onclick="showPage('daily',this)"><span class="icon">◷</span> Daily Attendance <span class="badge">Today</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Records</div>
+        <div class="nav-item" onclick="showPage('staff',this)"><span class="icon">◫</span> Staff Directory</div>
+        <div class="nav-item" onclick="showPage('summary',this)"><span class="icon">◧</span> Monthly Summary</div>
+        <div class="nav-item" id="nav-download" onclick="showPage('download',this)"><span class="icon">⬇</span> Download Reports</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">System</div>
+        <div class="nav-item" onclick="showPage('rules',this)"><span class="icon">◉</span> Shift Rules</div>
+        <div class="nav-item" onclick="showPage('access',this)"><span class="icon">🔐</span> Access Control</div>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="btn-logout" onclick="doLogout()">⏻ Sign Out</button>
+    </div>
+  </aside>
+
+  <div id="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="breadcrumb" id="page-breadcrumb">DataMaker / Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <div class="date-display" id="date-display">—</div>
+        <div class="clock-display" id="clock-display">00:00:00</div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card amber"><div class="stat-label">Total Staff</div><div class="stat-value">111</div><div class="stat-sub">88 workers · 23 managers</div></div>
+          <div class="stat-card green"><div class="stat-label">Present Today</div><div class="stat-value" id="stat-present">—</div><div class="stat-sub">Clocked in so far</div></div>
+          <div class="stat-card red"><div class="stat-label">Late Today</div><div class="stat-value" id="stat-late">0</div><div class="stat-sub">After grace period</div></div>
+          <div class="stat-card blue"><div class="stat-label">On Leave</div><div class="stat-value" id="stat-leave">—</div><div class="stat-sub">All leave types</div></div>
+          <div class="stat-card purple"><div class="stat-label">Absent</div><div class="stat-value" id="stat-absent">0</div><div class="stat-sub">Unexcused today</div></div>
+        </div>
+        <div class="info-banner">
+          <span class="ib-icon">ℹ</span>
+          <span>Stats update as daily attendance is recorded. Onsite staff: late after <strong>06:05</strong>. Online staff: late after <strong>04:05</strong>. Overtime = Clock-out minus scheduled closing time (not total hours).</span>
+        </div>
+        <div class="section-head">
+          <div><h2>Today's Attendance Snapshot</h2><p>Recently entered records · updates on save</p></div>
+          <button class="btn-sm" onclick="showPage('daily',document.querySelectorAll('.nav-item')[1])">Record Attendance →</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-toolbar"><span style="font-size:.78rem;color:var(--text3);font-family:var(--font-mono)">LIVE · <span id="record-count">0</span> records today</span></div>
+          <table><thead><tr><th>Name</th><th>Department</th><th>Location</th><th>Clock-in</th><th>Clock-out</th><th>Work Hrs</th><th>Late</th><th>Overtime</th><th>Status</th></tr></thead>
+          <tbody id="dash-tbody"><tr><td colspan="9"><div class="empty-state"><div class="em-icon">◷</div><p>No records yet today. Go to <strong>Daily Attendance</strong> to begin.</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- DAILY ATTENDANCE -->
+      <div class="page" id="page-daily">
+        <div class="info-banner"><span class="ib-icon">✎</span><span>Enter <strong>Clock-in</strong>, <strong>Clock-out</strong>, and <strong>Status</strong> for each staff member. Work hours, late flag, and overtime are auto-calculated per DGL shift rules.</span></div>
+        <div class="section-head mb-20">
+          <div><h2>Daily Clock-in / Clock-out</h2><p id="daily-date-label">—</p></div>
+          <div class="flex-row">
+            <select class="filter-select" id="group-filter" onchange="renderDailyCards()">
+              <option value="all">All Staff (111)</option>
+              <option value="admin">Admin / Managers (23)</option>
+              <option value="workers">Workers (88)</option>
+            </select>
+            <button class="btn-sm amber" onclick="saveAll()">💾 Save All</button>
+          </div>
+        </div>
+        <div class="entry-grid" id="entry-grid"></div>
+      </div>
+
+      <!-- STAFF DIRECTORY -->
+      <div class="page" id="page-staff">
+        <div class="section-head mb-20"><div><h2>Staff Directory</h2><p>All 111 staff — Admin, Project Managers, Quality Managers, Workers</p></div></div>
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <input class="search-input" id="staff-search" placeholder="Search by name…" oninput="filterStaff()">
+            <select class="filter-select" id="staff-dept-filter" onchange="filterStaff()">
+              <option value="">All Departments</option>
+              <option value="Admin">Admin</option>
+              <option value="Project">Project (Managers)</option>
+              <option value="Projects">Projects (Workers)</option>
+              <option value="Cleaning">Cleaning</option>
+            </select>
+            <select class="filter-select" id="staff-loc-filter" onchange="filterStaff()">
+              <option value="">All Locations</option>
+              <option value="Onsite">Onsite</option>
+              <option value="Online">Online</option>
+            </select>
+            <span class="ml-auto" style="font-family:var(--font-mono);font-size:.72rem;color:var(--text3)"><span id="staff-count">111</span> staff</span>
+          </div>
+          <div style="overflow-x:auto">
+          <table><thead><tr><th>Name</th><th>Department</th><th>Title</th><th>Location</th><th>Report Time</th><th>Late After</th><th>Closing</th><th>Std Hours</th><th>Annual Leave</th></tr></thead>
+          <tbody id="staff-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- MONTHLY SUMMARY -->
+      <div class="page" id="page-summary">
+        <div class="section-head mb-20">
+          <div><h2>Monthly Summary</h2><p>Aggregated attendance totals — all leave types and attendance metrics</p></div>
+          <div class="flex-row">
+            <select class="filter-select" id="summary-group" onchange="renderSummary()">
+              <option value="admin">Admin / Managers (23)</option>
+              <option value="workers">Workers (88)</option>
+            </select>
+            <button class="btn-sm" onclick="downloadSummary()">⬇ Export CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap summary-table-wrap">
+          <div style="overflow-x:auto">
+          <table class="summary-table"><thead><tr>
+            <th>Name</th><th>Dept</th><th>Work Hours</th><th>Late</th><th>Overtime</th>
+            <th>Annual</th><th>Sick</th><th>Condolence</th><th>Congratulatory</th>
+            <th>Exams</th><th>Emergency</th><th>Half-day</th><th>Official</th>
+            <th>Unpaid</th><th>Absent</th><th>Holiday</th>
+          </tr></thead>
+          <tbody id="summary-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DOWNLOAD REPORTS -->
+      <div class="page" id="page-download">
+        <div id="download-locked-banner" class="info-banner" style="background:var(--red-dim);border-color:rgba(245,101,101,.3);display:none">
+          <span class="ib-icon" style="color:var(--red)">⊘</span>
+          <span>Your role does not have download access. Permitted roles: <strong>Project Manager, Quality Manager, IT/Facility Manager, Accountant, HR, HR Assistant</strong>.</span>
+        </div>
+        <div id="download-content">
+          <div class="section-head mb-20"><div><h2>Download Reports</h2><p>Export daily or monthly attendance data as CSV</p></div></div>
+          <div class="rules-grid">
+            <div class="rule-card">
+              <div class="rule-card-head"><div class="rule-icon amber">📅</div><div><h3>Daily Report</h3></div></div>
+              <p style="margin-bottom:14px">Download today's full attendance log including clock-in/out, work hours, late flags, overtime, and status for all staff.</p>
+              <div class="form-group" style="margin-bottom:14px">
+                <label style="font-size:.72rem;color:var(--text3);font-family:var(--font-mono);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Select Date</label>
+                <input type="date" id="dl-date" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.85rem;outline:none">
+              </div>
+              <div class="form-group" style="margin-bottom:16px">
+                <label style="font-size:.72rem;color:var(--text3);font-family:var(--font-mono);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Staff Group</label>
+                <select id="dl-group" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.85rem;outline:none">
+                  <option value="all">All Staff (111)</option>
+                  <option value="admin">Admin / Managers (23)</option>
+                  <option value="workers">Workers (88)</option>
+                </select>
+              </div>
+              <button class="btn-sm amber" style="width:100%;justify-content:center" onclick="downloadReport('daily')">⬇ Download Daily CSV</button>
+            </div>
+            <div class="rule-card">
+              <div class="rule-card-head"><div class="rule-icon green">📊</div><div><h3>Monthly Summary Report</h3></div></div>
+              <p style="margin-bottom:14px">Download the full monthly summary with aggregated totals: work hours, late count, overtime, and all 16 leave types per staff member.</p>
+              <div class="form-group" style="margin-bottom:14px">
+                <label style="font-size:.72rem;color:var(--text3);font-family:var(--font-mono);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Select Month</label>
+                <input type="month" id="dl-month" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.85rem;outline:none">
+              </div>
+              <div class="form-group" style="margin-bottom:16px">
+                <label style="font-size:.72rem;color:var(--text3);font-family:var(--font-mono);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Staff Group</label>
+                <select id="dl-month-group" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.85rem;outline:none">
+                  <option value="all">All Staff (111)</option>
+                  <option value="admin">Admin / Managers (23)</option>
+                  <option value="workers">Workers (88)</option>
+                </select>
+              </div>
+              <button class="btn-sm amber" style="width:100%;justify-content:center" onclick="downloadReport('monthly')">⬇ Download Monthly CSV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHIFT RULES -->
+      <div class="page" id="page-rules">
+        <div class="section-head mb-20"><div><h2>Shift Rules &amp; Business Logic</h2><p>All attendance calculations follow these confirmed rules</p></div></div>
+        <div class="rules-grid mb-20">
+          <div class="rule-card">
+            <div class="rule-card-head"><div class="rule-icon amber">🏢</div><div><h3>Onsite Staff</h3></div></div>
+            <table class="rule-table"><tr><th>Rule</th><th>Value</th></tr>
+              <tr><td>Reporting Time</td><td><span class="badge badge-amber">06:00</span></td></tr>
+              <tr><td>Late After (grace)</td><td><span class="badge badge-red">06:05</span></td></tr>
+              <tr><td>Closing Time</td><td><span class="badge badge-green">14:30</span></td></tr>
+              <tr><td>Break Deduction</td><td>1 hour (lunch)</td></tr>
+              <tr><td>Standard Hours</td><td>8h 30m</td></tr>
+            </table>
+          </div>
+          <div class="rule-card">
+            <div class="rule-card-head"><div class="rule-icon blue">💻</div><div><h3>Online Staff</h3></div></div>
+            <table class="rule-table"><tr><th>Rule</th><th>Value</th></tr>
+              <tr><td>Reporting Time</td><td><span class="badge badge-amber">04:00</span></td></tr>
+              <tr><td>Late After (grace)</td><td><span class="badge badge-red">04:05</span></td></tr>
+              <tr><td>Closing Time</td><td><span class="badge badge-green">12:00</span></td></tr>
+              <tr><td>Break Deduction</td><td>30min break + 30min meeting = 1hr</td></tr>
+              <tr><td>Standard Hours</td><td>8h 30m</td></tr>
+            </table>
+          </div>
+          <div class="rule-card">
+            <div class="rule-card-head"><div class="rule-icon green">👑</div><div><h3>HR &amp; Head PM (9-Hour)</h3></div></div>
+            <p style="margin-bottom:10px;font-size:.82rem;color:var(--text2)">Applies to: <strong style="color:var(--text)">Patrick Ekar (HR)</strong> and <strong style="color:var(--text)">Sylvester Sakitey (Manager)</strong></p>
+            <table class="rule-table"><tr><th>Rule</th><th>Value</th></tr>
+              <tr><td>Reporting Time</td><td><span class="badge badge-amber">06:00</span></td></tr>
+              <tr><td>Late After (grace)</td><td><span class="badge badge-red">06:05</span></td></tr>
+              <tr><td>Closing Time</td><td><span class="badge badge-green">15:00</span></td></tr>
+              <tr><td>Standard Hours</td><td>9 hours</td></tr>
+            </table>
+          </div>
+          <div class="rule-card">
+            <div class="rule-card-head"><div class="rule-icon red">⏱</div><div><h3>Overtime Rule</h3></div></div>
+            <ul>
+              <li>Overtime = <strong>Clock-out minus Scheduled Closing Time</strong></li>
+              <li>NOT calculated from total hours worked</li>
+              <li>Late arrivals do NOT reduce overtime eligibility</li>
+              <li>Only counts on weekdays with active statuses</li>
+            </ul>
+            <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px;font-family:var(--font-mono);font-size:.75rem;color:var(--amber)">OT = max(0, clock_out − closing_time)</div>
+          </div>
+          <div class="rule-card">
+            <div class="rule-card-head"><div class="rule-icon amber">⚡</div><div><h3>Work Hours Calculation</h3></div></div>
+            <ul>
+              <li>Gross hours = Clock-out minus Clock-in</li>
+              <li>Deduct 1 hour break (all staff, both shifts)</li>
+              <li>Active statuses: Normal, Fieldwork, Remote, Training</li>
+              <li>Half-day AM or PM = 4 hours 15 minutes fixed</li>
+              <li>All leave statuses = 0 hours</li>
+            </ul>
+            <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px;font-family:var(--font-mono);font-size:.75rem;color:var(--green)">work_hrs = (clock_out − clock_in) − 1hr</div>
+          </div>
+          <div class="rule-card" style="grid-column:1/-1">
+            <div class="rule-card-head"><div class="rule-icon blue">📋</div><div><h3>All 16 Approved Status Codes</h3></div></div>
+            <div class="status-grid" style="margin-top:0">
+              <div class="status-chip active-status"><div class="s-name">Normal</div><div class="s-type">Active · Hours counted</div></div>
+              <div class="status-chip active-status"><div class="s-name">Fieldwork</div><div class="s-type">Active · Hours counted</div></div>
+              <div class="status-chip active-status"><div class="s-name">Remote</div><div class="s-type">Active · Hours counted</div></div>
+              <div class="status-chip active-status"><div class="s-name">Training</div><div class="s-type">Active · Hours counted</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Annual Leave</div><div class="s-type">Leave · Paid</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Sick Leave</div><div class="s-type">Leave · Paid</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Condolence Leave</div><div class="s-type">Leave · Paid</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Congratulatory Leave</div><div class="s-type">Leave · Paid</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Exams/Study Leave</div><div class="s-type">Leave · Paid</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Emergency Leave</div><div class="s-type">Leave · Paid</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Official Leave</div><div class="s-type">Leave · Authorised</div></div>
+              <div class="status-chip leave-status"><div class="s-name">Unpaid Leave</div><div class="s-type">Leave · Unpaid</div></div>
+              <div class="status-chip other-status"><div class="s-name">Half-day AM</div><div class="s-type">Partial · 4h 15m</div></div>
+              <div class="status-chip other-status"><div class="s-name">Half-day PM</div><div class="s-type">Partial · 4h 15m</div></div>
+              <div class="status-chip absent-status"><div class="s-name">Absent</div><div class="s-type">Unexcused absence</div></div>
+              <div class="status-chip absent-status"><div class="s-name">Holiday</div><div class="s-type">Public / company holiday</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCESS CONTROL -->
+      <div class="page" id="page-access">
+        <div class="section-head mb-20"><div><h2>Access Control</h2><p>Role-based permissions across the system</p></div></div>
+        <div class="access-grid">
+          <div class="access-card">
+            <h3><span style="color:var(--green)">✔</span> Download Access — Permitted</h3>
+            <div class="access-row"><span>Project Manager</span><span class="access-perm perm-yes">Daily + Monthly</span></div>
+            <div class="access-row"><span>Quality Manager</span><span class="access-perm perm-yes">Daily + Monthly</span></div>
+            <div class="access-row"><span>IT/Facility Manager</span><span class="access-perm perm-yes">Daily + Monthly</span></div>
+            <div class="access-row"><span>Accountant</span><span class="access-perm perm-yes">Daily + Monthly</span></div>
+            <div class="access-row"><span>HR</span><span class="access-perm perm-yes">Daily + Monthly</span></div>
+            <div class="access-row"><span>HR Assistant</span><span class="access-perm perm-yes">Daily + Monthly</span></div>
+          </div>
+          <div class="access-card">
+            <h3><span style="color:var(--red)">⊘</span> Download Access — Restricted</h3>
+            <div class="access-row"><span>Data Annotator</span><span class="access-perm perm-no">No download access</span></div>
+            <div class="access-row"><span>Janitor</span><span class="access-perm perm-no">No download access</span></div>
+            <div class="access-row"><span>Senior Manager</span><span class="access-perm perm-no">View only</span></div>
+            <div class="access-row"><span>Manager</span><span class="access-perm perm-no">View only</span></div>
+          </div>
+          <div class="access-card">
+            <h3>System Features by Role</h3>
+            <div class="access-row"><span>View Dashboard</span><span class="access-perm perm-yes">All roles</span></div>
+            <div class="access-row"><span>Record Daily Attendance</span><span class="access-perm perm-yes">All roles</span></div>
+            <div class="access-row"><span>View Staff Directory</span><span class="access-perm perm-yes">All roles</span></div>
+            <div class="access-row"><span>View Monthly Summary</span><span class="access-perm perm-yes">All roles</span></div>
+            <div class="access-row"><span>Download Reports (CSV)</span><span class="access-perm perm-yes">Privileged roles only</span></div>
+            <div class="access-row"><span>Edit Staff Records</span><span class="access-perm perm-no">HR only (protected)</span></div>
+          </div>
+          <div class="access-card">
+            <h3>Data Protection</h3>
+            <p style="font-size:.82rem;color:var(--text2);line-height:1.7">
+              The Staff and Workers master sheets in the downloadable Excel template are <strong style="color:var(--text)">password-protected</strong>
+              (password: <code style="font-family:var(--font-mono);color:var(--amber)">dgl2026</code>).<br><br>
+              Only HR can unlock and modify staff master records.<br><br>
+              Downloaded reports contain all formulas and auto-calculation logic identical to the master Excel template.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-title">Confirm</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const ADMIN_STAFF=[{name:"Sylvester Sakitey",dept:"Admin",title:"Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"15:00",stdHrs:9,al:15},{name:"Patrick Ekar",dept:"Admin",title:"HR",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"15:00",stdHrs:9,al:15},{name:"Emmanuel Owusu Appiah",dept:"Admin",title:"IT/Facility Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Belinda Abrefa-Amissah",dept:"Admin",title:"Accountant",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Kristodea Abrahams",dept:"Admin",title:"HR Assistant",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Rebecca Adamah",dept:"Project",title:"Senior Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Priscilla Obenewaa Awuku",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Patricia Owusua Boateng",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Wisdom Awove",dept:"Project",title:"Project Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Ronnie Yeboah",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"William Kwame Gawugah",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Priscilla Adamah",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Ishmael Kwadwo Dartey",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Joseph Gyimah",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Abigail Fremah",dept:"Project",title:"Quality Manager",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:15},{name:"Alex Teye Ossom",dept:"Project",title:"Senior Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Barbara Kuorkor Addison",dept:"Project",title:"Project Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Emmanuel Ampadu Agyarko",dept:"Project",title:"Quality Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Eric Gameti",dept:"Project",title:"Project Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Moses Boakye Tenkorang",dept:"Project",title:"Project Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Edward Seffah Boateng",dept:"Project",title:"Quality Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Wisdom Ayi",dept:"Project",title:"Quality Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15},{name:"Derrick Ofori Ahego",dept:"Project",title:"Quality Manager",loc:"Online",report:"04:00",lateAfter:"04:05",closing:"12:00",stdHrs:8.5,al:15}];
+const WORKER_NAMES=["Adelaide Naa Atswei Klufio","Angel Adzo Amoah","Angela Addei","Angela Ogechi Mba","Audrey Naa Ayorkor Klufio","Beatrice Jadee","Benjamin Baah Asiedu","Bismark Ansong Asare","Bright Gideon Dumashie","Caleb Osei Mensah","Charles Kwame Owusu","Charlotte Ama Boateng","Clement Nana Yaw Boateng","Comfort Asante","Daniel Kweku Arhin","Daniel Yao Agbeko","Daniella Ama Baah","David Kwabena Mensah","Deborah Abena Asante","Diana Akosua Acheampong","Dorothy Ama Boateng","Edmund Nana Kwame Mensah","Edward Kofi Asante","Elijah Kwame Mensah","Elizabeth Ama Owusu","Emmanuel Asiedu","Emmanuel Kweku Aidoo","Emmanuel Kweku Boateng","Emmanuel Nana Yaw Mensah","Ernest Kwabena Asante","Esther Abena Mensah","Evelyn Akosua Owusu","Faustina Ama Boateng","Felix Kofi Mensah","Florence Abena Asante","Francis Kwabena Boateng","Frank Nana Yaw Asante","Frederick Kofi Owusu","Gabriel Kweku Mensah","George Kwabena Asante","Georgina Ama Boateng","Ghana Nana Yaw Mensah","Gloria Akosua Owusu","Grace Abena Asante","Hannah Ama Boateng","Isaac Kofi Mensah","Isaiah Kwabena Asante","Ishmael Kweku Owusu","Jacob Nana Yaw Mensah","James Kofi Asante","Janet Ama Boateng","Jemima Akosua Owusu","Jennifer Abena Mensah","Jessica Ama Asante","Joana Kofi Boateng","John Kwabena Mensah","Jonathan Kweku Asante","Joseph Nana Yaw Owusu","Josephine Kofi Mensah","Joyce Ama Asante","Judith Akosua Boateng","Julius Abena Owusu","Justice Ama Mensah","Kingsley Kofi Asante","Kwame Kwabena Boateng","Kweku Nana Yaw Mensah","Kwesi Kofi Owusu","Linda Ama Asante","Lydia Akosua Boateng","Margaret Abena Mensah","Maria Ama Owusu","Martha Kofi Asante","Mary Kwabena Boateng","Michael Nana Yaw Mensah","Miriam Kofi Owusu","Moses Ama Asante","Nancy Akosua Boateng","Naomi Abena Mensah","Nathan Ama Owusu","Nicholas Kofi Asante","Nora Kwabena Boateng","Patrick Nana Yaw Mensah","Paul Kofi Owusu","Paulina Ama Asante","Rachel Akosua Boateng","Rebecca Abena Mensah","Mabel Ama Owusu","Samuel Kofi Asante"];
+const WORKERS=WORKER_NAMES.map((n,i)=>({name:n,dept:i>=86?"Cleaning":"Projects",title:i>=86?"Janitor":"Data Annotator",loc:"Onsite",report:"06:00",lateAfter:"06:05",closing:"14:30",stdHrs:8.5,al:0}));
+const ALL_STAFF=[...ADMIN_STAFF,...WORKERS];
+const STATUS_LIST=["Normal","Condolence Leave","Congratulatory Leave","Exams/Study Leave","Emergency Leave","Annual Leave","Half-day AM","Half-day PM","Sick Leave","Official Leave","Fieldwork","Remote","Training","Unpaid Leave","Absent","Holiday"];
+const DOWNLOAD_ROLES=["HR","HR Assistant","Accountant","IT/Facility Manager","Project Manager","Quality Manager"];
+const ACTIVE_STATUSES=new Set(["Normal","Fieldwork","Remote","Training"]);
+
+let currentUser=null;
+let attendanceData={};
+let registeredUsers=[];
+
+function toggleSignup(show){
+  const signinCard=document.querySelectorAll('.login-card')[0];
+  const signupCard=document.getElementById('signup-card');
+  if(signinCard&&signupCard){
+    signinCard.style.display=show?'none':'block';
+    signupCard.style.display=show?'block':'none';
+  }
+}
+
+function doSignup(){
+  const name=document.getElementById('signup-name').value.trim();
+  const id=document.getElementById('signup-id').value.trim();
+  const role=document.getElementById('signup-role').value;
+  const pass=document.getElementById('signup-pass').value;
+  const pass2=document.getElementById('signup-pass2').value;
+  const err=document.getElementById('signup-error');
+  if(!name||!id||!role||!pass||!pass2){err.textContent='Please fill in all fields.';err.classList.add('show');return;}
+  if(pass.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
+  if(pass!==pass2){err.textContent='Passwords do not match.';err.classList.add('show');return;}
+  if(registeredUsers.find(u=>u.id===id)){err.textContent='Staff ID already registered.';err.classList.add('show');return;}
+  registeredUsers.push({name,id,role,pass});
+  err.classList.remove('show');
+  toast('✓ Account created! You can now sign in.','success');
+  toggleSignup(false);
+  document.getElementById('login-id').value=id;
+  document.getElementById('login-role').value=role;
+}
+
+function doLogin(){
+  const id=document.getElementById('login-id').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const role=document.getElementById('login-role').value;
+  const err=document.getElementById('login-error');
+  if(!id||!pass||!role){err.textContent='Please fill in all fields.';err.classList.add('show');return;}
+  // Check registered users first, then fallback to demo password
+  const regUser=registeredUsers.find(u=>u.id===id);
+  if(regUser){if(pass!==regUser.pass){err.textContent='Invalid password for this account.';err.classList.add('show');return;}}
+  else if(pass!=='dgl2026'){err.textContent='Incorrect password. Hint: dgl2026 (demo)';err.classList.add('show');return;}
+  err.classList.remove('show');
+  const found=ALL_STAFF.find(s=>s.name.toLowerCase().includes(id.toLowerCase()));
+  currentUser={id,role,name:found?found.name:`User #${id}`};
+  document.getElementById('sidebar-username').textContent=currentUser.name;
+  document.getElementById('sidebar-role').textContent=role;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  initDates();renderDashboard();renderStaffTable();renderSummary();renderDailyCards();
+}
+
+function doLogout(){
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('visible');
+  ['login-id','login-pass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('login-role').value='';
+  document.getElementById('login-error').classList.remove('show');
+  currentUser=null;
+}
+
+const PAGE_TITLES={dashboard:'Dashboard',daily:'Daily Attendance',staff:'Staff Directory',summary:'Monthly Summary',download:'Download Reports',rules:'Shift Rules',access:'Access Control'};
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p=document.getElementById('page-'+id);
+  if(p)p.classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('page-title').textContent=PAGE_TITLES[id]||id;
+  document.getElementById('page-breadcrumb').textContent=`DataMaker / ${PAGE_TITLES[id]||id}`;
+  if(id==='download'){
+    const ok=currentUser&&DOWNLOAD_ROLES.includes(currentUser.role);
+    document.getElementById('download-locked-banner').style.display=ok?'none':'flex';
+    document.getElementById('download-content').style.display=ok?'block':'none';
+  }
+}
+
+function initDates(){
+  const t=new Date();
+  document.getElementById('dl-date').value=t.toISOString().split('T')[0];
+  document.getElementById('dl-month').value=t.toISOString().slice(0,7);
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const ds=`${days[t.getDay()]}, ${t.getDate()} ${months[t.getMonth()]} ${t.getFullYear()}`;
+  document.getElementById('date-display').textContent=ds;
+  document.getElementById('daily-date-label').textContent=ds;
+  updateClock();setInterval(updateClock,1000);
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock-display').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+
+function toMins(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function toHHMM(m){if(m==null||m<=0)return'0:00';return`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;}
+
+function calcRecord(staff,ci,co,st){
+  const r={workHrs:null,isLate:false,lateBy:0,overtime:0};
+  if(!ci||!st)return r;
+  const inM=toMins(ci),latM=toMins(staff.lateAfter),clM=toMins(staff.closing);
+  if(st==='Normal'&&inM>latM){r.isLate=true;r.lateBy=inM-latM;}
+  if(ACTIVE_STATUSES.has(st)&&co){const outM=toMins(co);r.workHrs=Math.max(outM-inM-60,0);r.overtime=Math.max(outM-clM,0);}
+  else if(st==='Half-day AM'||st==='Half-day PM'){r.workHrs=255;}
+  return r;
+}
+
+function renderDailyCards(){
+  const grp=document.getElementById('group-filter').value;
+  const staff=grp==='admin'?ADMIN_STAFF:grp==='workers'?WORKERS:ALL_STAFF;
+  const grid=document.getElementById('entry-grid');
+  grid.innerHTML='';
+  staff.forEach((s,i)=>{
+    const key=`${s.name}|today`;const sv=attendanceData[key]||{};
+    const lb=s.loc==='Online'?'<span class="badge badge-blue">Online</span>':'<span class="badge badge-amber">Onsite</span>';
+    const opts=STATUS_LIST.map(x=>`<option value="${x}"${(sv.status===x||(!sv.status&&x==='Normal'))?' selected':''}>${x}</option>`).join('');
+    const c=document.createElement('div');c.className='entry-card';
+    c.innerHTML=`<div class="entry-card-head"><div><div class="entry-name">${s.name}</div><div class="entry-meta">${s.title} · ${s.dept}</div></div>${lb}</div>
+    <div class="entry-card-body">
+      <div class="entry-row">
+        <div class="entry-field"><label>Clock-in ★</label><input type="time" id="ci-${i}" value="${sv.clockIn||''}" onchange="upd(${i})"></div>
+        <div class="entry-field"><label>Clock-out ★</label><input type="time" id="co-${i}" value="${sv.clockOut||''}" onchange="upd(${i})"></div>
+      </div>
+      <div class="entry-field" style="margin-bottom:10px"><label>Status ★</label><select id="st-${i}" onchange="upd(${i})">${opts}</select></div>
+      <div class="entry-computed">
+        <div class="computed-chip chip-hrs"><div class="chip-label">Work Hrs</div><div class="chip-val" id="ch-h-${i}">—</div></div>
+        <div class="computed-chip chip-late"><div class="chip-label">Late</div><div class="chip-val" id="ch-l-${i}">—</div></div>
+        <div class="computed-chip chip-ot"><div class="chip-label">Overtime</div><div class="chip-val" id="ch-o-${i}">—</div></div>
+      </div>
+    </div>`;
+    grid.appendChild(c);
+    if(sv.clockIn||sv.clockOut){upd(i,s);}
+  });
+}
+
+function upd(i,staffRef){
+  const grp=document.getElementById('group-filter').value;
+  const staff=grp==='admin'?ADMIN_STAFF:grp==='workers'?WORKERS:ALL_STAFF;
+  const s=staffRef||staff[i];if(!s)return;
+  const ci=document.getElementById(`ci-${i}`)?.value;
+  const co=document.getElementById(`co-${i}`)?.value;
+  const st=document.getElementById(`st-${i}`)?.value;
+  const r=calcRecord(s,ci,co,st);
+  const hEl=document.getElementById(`ch-h-${i}`);
+  const lEl=document.getElementById(`ch-l-${i}`);
+  const oEl=document.getElementById(`ch-o-${i}`);
+  if(hEl)hEl.textContent=r.workHrs!==null?toHHMM(r.workHrs):'—';
+  if(lEl)lEl.textContent=r.isLate?`${r.lateBy}m`:'—';
+  if(oEl)oEl.textContent=r.overtime>0?toHHMM(r.overtime):'—';
+  attendanceData[`${s.name}|today`]={name:s.name,clockIn:ci,clockOut:co,status:st,computed:r};
+}
+
+function saveAll(){
+  const grp=document.getElementById('group-filter').value;
+  const staff=grp==='admin'?ADMIN_STAFF:grp==='workers'?WORKERS:ALL_STAFF;
+  let n=0;staff.forEach((_,i)=>{upd(i);n++;});
+  renderDashboard();toast(`✓ Saved ${n} records`,'success');
+}
+
+function renderDashboard(){
+  const recs=Object.values(attendanceData).filter(r=>r.name);
+  const present=recs.filter(r=>r.clockIn).length;
+  const late=recs.filter(r=>r.computed?.isLate).length;
+  const leave=recs.filter(r=>r.status&&r.status!=='Normal'&&r.status!=='Absent'&&r.status!=='Holiday'&&!ACTIVE_STATUSES.has(r.status)).length;
+  const absent=recs.filter(r=>r.status==='Absent').length;
+  document.getElementById('stat-present').textContent=present||'—';
+  document.getElementById('stat-late').textContent=late;
+  document.getElementById('stat-leave').textContent=leave||'—';
+  document.getElementById('stat-absent').textContent=absent;
+  document.getElementById('record-count').textContent=recs.length;
+  const tbody=document.getElementById('dash-tbody');
+  if(!recs.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="em-icon">◷</div><p>No records yet. Go to <strong>Daily Attendance</strong> to begin recording.</p></div></td></tr>';return;}
+  tbody.innerHTML=recs.slice(0,25).map(r=>{
+    const c=r.computed||{};const s=ALL_STAFF.find(x=>x.name===r.name)||{};
+    const sc=ACTIVE_STATUSES.has(r.status)?'badge-green':r.status==='Absent'?'badge-red':r.status==='Holiday'?'badge-gray':'badge-blue';
+    const lb=s.loc==='Online'?'<span class="badge badge-blue">Online</span>':'<span class="badge badge-amber">Onsite</span>';
+    return`<tr><td class="td-name">${r.name}</td><td>${s.dept||'—'}</td><td>${lb}</td><td class="td-mono">${r.clockIn||'—'}</td><td class="td-mono">${r.clockOut||'—'}</td><td class="td-mono" style="color:var(--green)">${c.workHrs!=null?toHHMM(c.workHrs):'—'}</td><td>${c.isLate?'<span class="late-dot">●</span>':'—'}</td><td class="td-mono" style="color:var(--amber)">${c.overtime>0?toHHMM(c.overtime):'—'}</td><td><span class="badge ${sc}">${r.status||'—'}</span></td></tr>`;
+  }).join('');
+}
+
+function renderStaffTable(list){
+  const staff=list||ALL_STAFF;
+  document.getElementById('staff-tbody').innerHTML=staff.map(s=>{
+    const lb=s.loc==='Online'?'<span class="badge badge-blue">Online</span>':'<span class="badge badge-amber">Onsite</span>';
+    return`<tr><td class="td-name">${s.name}</td><td>${s.dept}</td><td>${s.title}</td><td>${lb}</td><td class="td-mono">${s.report}</td><td class="td-mono" style="color:var(--red)">${s.lateAfter}</td><td class="td-mono">${s.closing}</td><td class="td-mono">${s.stdHrs===9?'9h 00m':'8h 30m'}</td><td class="td-mono">${s.al>0?s.al+' days':'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('staff-count').textContent=staff.length;
+}
+
+function filterStaff(){
+  const q=document.getElementById('staff-search').value.toLowerCase();
+  const d=document.getElementById('staff-dept-filter').value;
+  const l=document.getElementById('staff-loc-filter').value;
+  renderStaffTable(ALL_STAFF.filter(s=>(!q||s.name.toLowerCase().includes(q))&&(!d||s.dept===d)&&(!l||s.loc===l)));
+}
+
+function renderSummary(){
+  const grp=document.getElementById('summary-group').value;
+  const staff=grp==='admin'?ADMIN_STAFF:WORKERS;
+  document.getElementById('summary-tbody').innerHTML=staff.map(s=>{
+    const recs=Object.values(attendanceData).filter(r=>r.name===s.name);
+    const tw=recs.reduce((a,r)=>a+(r.computed?.workHrs||0),0);
+    const lc=recs.filter(r=>r.computed?.isLate).length;
+    const to=recs.reduce((a,r)=>a+(r.computed?.overtime||0),0);
+    const cs=x=>recs.filter(r=>r.status===x).length;
+    const hd=recs.filter(r=>r.status==='Half-day AM'||r.status==='Half-day PM').length;
+    const n=v=>v===0?`<span class="zero">0</span>`:v;
+    return`<tr><td class="td-name">${s.name}</td><td>${s.dept}</td>
+      <td class="td-mono" style="color:var(--green)">${tw>0?toHHMM(tw):'<span class="zero">0:00</span>'}</td>
+      <td class="num-cell">${lc>0?`<span class="highlight-red">${lc}</span>`:`<span class="zero">0</span>`}</td>
+      <td class="td-mono" style="color:var(--amber)">${to>0?toHHMM(to):'<span class="zero">0:00</span>'}</td>
+      <td class="num-cell">${n(cs('Annual Leave'))}</td><td class="num-cell">${n(cs('Sick Leave'))}</td>
+      <td class="num-cell">${n(cs('Condolence Leave'))}</td><td class="num-cell">${n(cs('Congratulatory Leave'))}</td>
+      <td class="num-cell">${n(cs('Exams/Study Leave'))}</td><td class="num-cell">${n(cs('Emergency Leave'))}</td>
+      <td class="num-cell">${n(hd)}</td><td class="num-cell">${n(cs('Official Leave'))}</td>
+      <td class="num-cell">${n(cs('Unpaid Leave'))}</td>
+      <td class="num-cell">${cs('Absent')>0?`<span class="highlight-red">${cs('Absent')}</span>`:`<span class="zero">0</span>`}</td>
+      <td class="num-cell">${n(cs('Holiday'))}</td></tr>`;
+  }).join('');
+}
+
+function downloadReport(type){
+  if(!currentUser||!DOWNLOAD_ROLES.includes(currentUser.role)){toast('⊘ Access denied for your role','error');return;}
+  const lbl=type==='daily'?document.getElementById('dl-date').value:document.getElementById('dl-month').value;
+  toast(`⬇ Generating ${type} report…`,'info');
+  setTimeout(()=>{
+    const grp=type==='daily'?document.getElementById('dl-group').value:document.getElementById('dl-month-group').value;
+    const staff=grp==='admin'?ADMIN_STAFF:grp==='workers'?WORKERS:ALL_STAFF;
+    const hdrs=type==='daily'?['Name','Department','Title','Location','Report Time','Late After','Closing','Clock-in','Clock-out','Work Hours','Late','Overtime','Status','Notes']:['Name','Department','Work Hours','Late Count','Overtime','Annual Leave','Sick Leave','Condolence','Congratulatory','Exams Leave','Emergency','Half-day','Official','Unpaid','Absent','Holiday'];
+    const rows=staff.map(s=>{
+      if(type==='daily'){const r=attendanceData[`${s.name}|today`]||{};const c=r.computed||{};return[s.name,s.dept,s.title,s.loc,s.report,s.lateAfter,s.closing,r.clockIn||'',r.clockOut||'',c.workHrs!=null?toHHMM(c.workHrs):'',c.isLate?'●':'',c.overtime>0?toHHMM(c.overtime):'',r.status||'',''];}
+      const recs=Object.values(attendanceData).filter(r=>r.name===s.name);
+      const tw=recs.reduce((a,r)=>a+(r.computed?.workHrs||0),0);
+      const lc=recs.filter(r=>r.computed?.isLate).length;
+      const to=recs.reduce((a,r)=>a+(r.computed?.overtime||0),0);
+      const cs=x=>recs.filter(r=>r.status===x).length;
+      const hd=recs.filter(r=>r.status==='Half-day AM'||r.status==='Half-day PM').length;
+      return[s.name,s.dept,toHHMM(tw),lc,toHHMM(to),cs('Annual Leave'),cs('Sick Leave'),cs('Condolence Leave'),cs('Congratulatory Leave'),cs('Exams/Study Leave'),cs('Emergency Leave'),hd,cs('Official Leave'),cs('Unpaid Leave'),cs('Absent'),cs('Holiday')];
+    });
+    const csv=[hdrs,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download=`DGL_Attendance_${type}_${lbl}.csv`;a.click();
+    toast('✓ Report downloaded','success');
+  },600);
+}
+
+function downloadSummary(){downloadReport('monthly');}
+
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+function toast(msg,type='info'){
+  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);setTimeout(()=>el.remove(),3500);
+}
+
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('login-id').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>
